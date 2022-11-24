@@ -1,8 +1,8 @@
-import phe as paillier
 import numpy as np
+from numpy._typing import NDArray
 from sklearn.datasets import load_diabetes
-from datetime import datetime
-import math
+
+
 
 def get_data(n_clients):
 
@@ -39,19 +39,39 @@ def get_data(n_clients):
 
     return X, y, X_test, y_test
 
+
 def encrypt_vector(pubkey, x):
     return [pubkey.encrypt(x[i]) for i in range(x.shape[0])]
 
-def encrypt_vector_2(pubkey, x):
-    return [pubkey.encrypt(k) for k in x]
+
+def encrypt_matrix(pubkey, x: NDArray):
+    if x.ndim == 1:
+        return encrypt_vector(pubkey, x)
+    return [[pubkey.encrypt(element) for element in row] for row in x]
+
 
 def decrypt_vector(privkey, x):
     return np.array([privkey.decrypt(i) for i in x])
+
+
+def decrypt_matrix(privkey, x):
+    if not isinstance(x[0], list):
+        return decrypt_vector(privkey, x)
+    return np.array([[privkey.decrypt(element) for element in row] for row in x])
+
 
 def sum_encrypted_vectors(x, y):
     if len(x) != len(y):
         raise Exception('Encrypted vectors must have the same size')
     return [x[i] + y[i] for i in range(len(x))]
 
+def sum_encrypted_matrix(x, y):
+    if not isinstance(x[0], list):
+        return sum_encrypted_vectors(x, y)
+    return [[x[i][j] + y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
+
 def mean_square_error(y_pred, y):
     return np.mean((y - y_pred) ** 2)
+
+
+

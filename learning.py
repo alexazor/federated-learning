@@ -1,26 +1,27 @@
-from client import Client
+from clients import Client
 from server import Server
 from utils import mean_square_error
 from datetime import datetime
 import math
 import numpy as np
 
-def local_learning(names,n_clients, X, y, n_iter = 100, eta = 0.01):
+def local_learning(names,n_clients, X, y, client_factory, n_iter = 100, eta = 0.01):
     clients = []
     for i in range(n_clients):
-        clients.append(Client(names[i], X[i], y[i], None, n_iter, eta))
+        clients.append(client_factory(names[i], X[i], y[i], None, lr=eta))
     
     for c in clients:
         c.fit()
     
     return clients
 
-def federated_learning(names, n_clients, X, y, n_iter = 100, eta = 0.01):
+
+def federated_learning(names, n_clients, X, y, client_factory, n_iter=100, eta=0.01):
     server = Server(key_length=1024)
     clients = []
     for i in range(n_clients):
-        clients.append(Client(names[i], X[i], y[i], server.pubkey, None, eta))
-        
+        clients.append(client_factory(names[i], X[i], y[i], server.pubkey, lr=eta))
+
     # Federated Learning with encryption
     for i in range(n_iter):
         if i % 50 == 0:
@@ -30,7 +31,12 @@ def federated_learning(names, n_clients, X, y, n_iter = 100, eta = 0.01):
         for i in range(n_clients):
             encrypt_aggr = clients[i].encrypted_gradient(sum_to=encrypt_aggr)
         # Send aggregate to server and decrypt it
-        aggr = server.decrypt_aggregate(encrypt_aggr, n_clients)
+        aggr = None
+        try:
+            aggr = server.decrypt_list_of_aggregate(encrypt_aggr, n_clients)
+        except Exception:
+            aggr = server.decrypt_aggregate(encrypt_aggr, n_clients)
+
         # Take gradient steps
         for c in clients:
             c.gradient_step(aggr)
