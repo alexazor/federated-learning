@@ -15,6 +15,8 @@ def get_data(n_clients):
 
     # The features are already preprocessed
     # Shuffle
+    # Is this really useful ? As the representative test set is already sampled randomly (see below)
+    # and that we want to induce a bias on the splited distributions ?
     perm = np.random.permutation(X.shape[0])
     X, y = X[perm, :], y[perm]
 
@@ -28,7 +30,7 @@ def get_data(n_clients):
 
     # Split train among multiple clients.
     # The selection is not at random but by slice. We simulate the fact that each client
-    # sees a potentially very different sample of patients.
+    # sees a potentially very different sample of patients. ??? Not really because the original dataset has been suffled.
     X, y = [], []
     step = int(X_train.shape[0] / n_clients)
     for c in range(n_clients):
