@@ -1,5 +1,7 @@
 from numpy._typing import NDArray
 from utils import encrypt_matrix, sum_encrypted_matrix
+from model import get_model_mlp, get_model_lin_reg
+
 
 
 class Client:
@@ -26,9 +28,9 @@ class Client:
     def compute_gradient(self):
         return self.model.compute_gradient(self.data, self.target)
 
-    def predict(self, X: NDArray) -> float:
+    def predict(self, data: NDArray) -> float:
         """Score test data"""
-        return self.model.predict(X)
+        return self.model.predict(data)
 
     def encrypted_gradient(self, sum_to=None) -> list[NDArray]:
         """Compute gradient. Encrypt it.
@@ -44,3 +46,13 @@ class Client:
             return [sum_encrypted_matrix(grad_sum_to, grad) for grad_sum_to, grad in zip(sum_to, gradients)]
         else:
             return gradients
+
+
+def get_mlp_client(id, data: NDArray, target: NDArray, pubkey, lr=0.01, **kwargs):
+    model = get_model_mlp(data.shape[1], lr=lr)
+    return Client(id, data, target, pubkey, model, **kwargs)
+
+
+def get_lreg_client(id, data, target, pubkey, **kwargs):
+    model = get_model_lin_reg(data.shape[1])
+    return Client(id, data, target, pubkey, model, **kwargs)

@@ -9,7 +9,7 @@ def encryptPaillier(pubKey, message):
     return pubKey.encrypt(message)
 
 
-def decryptPaillier(privKey, pubKey, message):
+def decryptPaillier(privKey, message):
     return privKey.decrypt(message)
 
 
