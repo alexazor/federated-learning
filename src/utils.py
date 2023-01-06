@@ -3,7 +3,6 @@ from numpy._typing import NDArray
 from sklearn.datasets import load_diabetes
 
 
-
 def get_data(n_clients):
 
     diabetes = load_diabetes()
@@ -40,24 +39,24 @@ def get_data(n_clients):
     return X, y, X_test, y_test
 
 
-def encrypt_vector(pubkey, x):
-    return [pubkey.encrypt(x[i]) for i in range(x.shape[0])]
+def encrypt_vector(pubKey, vector, encrypting_function):
+    return [encrypting_function(pubKey, vector[i]) for i in range(vector.shape[0])]
 
 
-def encrypt_matrix(pubkey, x: NDArray):
-    if x.ndim == 1:
-        return encrypt_vector(pubkey, x)
-    return [[pubkey.encrypt(element) for element in row] for row in x]
+def encrypt_matrix(pubKey, matrix: NDArray, encrypting_function):
+    if matrix.ndim == 1:
+        return encrypt_vector(pubKey, matrix, encrypting_function)
+    return [encrypt_vector(pubKey, row, encrypting_function) for row in matrix]
 
 
-def decrypt_vector(privkey, x):
-    return np.array([privkey.decrypt(i) for i in x])
+def decrypt_vector(privKey, pubKey, vector, decrypting_function):
+    return np.array([decrypting_function(privKey, pubKey, vector[i]) for i in vector])
 
 
-def decrypt_matrix(privkey, x):
-    if not isinstance(x[0], list):
-        return decrypt_vector(privkey, x)
-    return np.array([[privkey.decrypt(element) for element in row] for row in x])
+def decrypt_matrix(privKey, pubKey, matrix, decrypting_function):
+    if not isinstance(matrix[0], list):
+        return decrypt_vector(privKey, matrix)
+    return np.array([decrypt_vector(privKey, pubKey, row, decrypting_function) for row in x])
 
 
 def sum_encrypted_vectors(x, y):
@@ -65,13 +64,12 @@ def sum_encrypted_vectors(x, y):
         raise Exception('Encrypted vectors must have the same size')
     return [x[i] + y[i] for i in range(len(x))]
 
+
 def sum_encrypted_matrix(x, y):
     if not isinstance(x[0], list):
         return sum_encrypted_vectors(x, y)
     return [[x[i][j] + y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
 
+
 def mean_square_error(y_pred, y):
     return np.mean((y - y_pred) ** 2)
-
-
-

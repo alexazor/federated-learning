@@ -1,4 +1,4 @@
-from numpy._typing import NDArray
+from numpy.typing import NDArray
 from helper import ModelAdapter
 from models import MLP
 from utils import encrypt_vector, encrypt_matrix, sum_encrypted_vectors, sum_encrypted_matrix
@@ -30,7 +30,7 @@ class Client:
 
     def gradient_step(self, gradient):
         """Update the model with the given gradient"""
-        
+
         self.weights -= self.lr * gradient
 
     def compute_gradient(self):
@@ -101,7 +101,8 @@ class MLPClient:
         When `sum_to` is given, sum the encrypted gradient to it, assumed
         to be another vector of the same size
         """
-        gradients = [encrypt_matrix(self.pubkey, gradient) for gradient in self.compute_gradient()]
+        gradients = [encrypt_matrix(self.pubkey, gradient)
+                     for gradient in self.compute_gradient()]
 
         if sum_to is not None:
             if len(sum_to) != len(gradients):
@@ -120,4 +121,3 @@ def get_mlp_client(name, X: NDArray, y: NDArray, pubkey, lr=0.01, **kwargs):
 
 def get_lreg_client(name, X, y, pubkey, **kwargs):
     return Client(name, X, y, pubkey, **kwargs)
-
