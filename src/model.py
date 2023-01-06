@@ -42,7 +42,7 @@ class ModelLinearRegression(Model):
 
     def compute_loss(self, data: NDArray, label: NDArray) -> float:
         prediction = self.predict(data)
-        return np.linalg.norm(prediction-label)**2/label.shape[0]
+        return np.linalg.norm(prediction - label) ** 2 / label.shape[0]
 
 
 class ModelMLP(Model):
@@ -126,3 +126,14 @@ class MLP(nn.Module):
         # x = self.fc2(x)
         # x = self.fc3(x)
         return x
+
+
+def get_model_lin_reg(nb_input, **kwargs):
+    return ModelLinearRegression(nb_input, **kwargs)
+
+
+def get_model_mlp(nb_input, **kwargs):
+    model = MLP(nb_input)
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.SGD(model.parameters(), **kwargs)
+    return ModelMLP(model, criterion, optimizer)
