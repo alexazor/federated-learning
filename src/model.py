@@ -2,24 +2,24 @@ from abc import ABC, abstractmethod
 import numpy as np
 import torch.nn as nn
 import torch
+from numpy._typing import NDArray
 
 
 class Model(ABC):
-
     @abstractmethod
-    def update_model(self):
+    def update_model(self, gradients: list[NDArray]):
         pass
 
     @abstractmethod
-    def predict(self, data):
+    def predict(self, data: NDArray):
         pass
 
     @abstractmethod
-    def compute_gradient(self, data, label):
+    def compute_gradient(self, data: NDArray, label: NDArray):
         pass
 
     @abstractmethod
-    def compute_loss(self):
+    def compute_loss(self, data: NDArray, label: NDArray):
         pass
 
 
@@ -28,18 +28,19 @@ class ModelLinearRegression(Model):
         self.weights = np.zeros(nb_input)
         self.lr = lr
 
-    def compute_gradient(self, data, label):
+    def compute_gradient(self, data: NDArray, label: NDArray) -> list[NDArray]:
         delta = self.predict(data) - label
-        return [delta.dot(self.X)]
+        return [delta.dot(data)]
 
-    def update_model(self, gradient):
-        self.weights -= self.lr * gradient[0]
+    def update_model(self, gradients: list[NDArray]):
+        self.weights -= self.lr * gradients[0]
+        pass
 
-    def predict(self, data):
+    def predict(self, data: NDArray) -> NDArray:
         data = np.array(data)
         return data.dot(self.weights)
 
-    def compute_loss(self, data, label):
+    def compute_loss(self, data: NDArray, label: NDArray) -> float:
         prediction = self.predict(data)
         return np.linalg.norm(prediction-label)**2/label.shape[0]
 
@@ -70,7 +71,7 @@ class ModelMLP(Model):
             output = self.model(data)
         return output
 
-    def compute_gradient(self, data: NDArray, label: NDArray):
+    def compute_gradient(self, data: NDArray, label: NDArray) -> list[NDArray]:
         self.model.train()
 
         data = torch.tensor(data)
