@@ -1,4 +1,4 @@
-from learning import federated_learning, local_learning
+from src.learning import federated_learning
 from utils import get_data, mean_square_error
 from clients import get_mlp_client
 

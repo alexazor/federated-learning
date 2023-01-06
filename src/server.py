@@ -4,7 +4,7 @@ from utils import decrypt_matrix
 class Server:
     """Holds the private key. Decrypt the average gradient"""
 
-    def __init__(self, preivKey, pubKey, decrypt):
+    def __init__(self, privKey, pubKey, decrypt):
         self.pubKey = pubKey
         self.privKey = privKey
         self.decrypt = decrypt

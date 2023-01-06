@@ -1,4 +1,4 @@
-from clients import Client
+from client import Client
 from server import Server
 from utils import mean_square_error
 from datetime import datetime
