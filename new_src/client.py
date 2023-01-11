@@ -11,8 +11,7 @@ class Client:
         self.data = model.get_data()
         self.target = model.get_label()
         self.nb_iter = nb_iter
-        self.encrypt = encryptClass  # encrypt class : PaillierEnc or CKKS
-        self.key = self.encrypt.get_pubkey()
+        self.encrypt = encryptClass  # encrypt class : PaillierEnc or CKKSEnc
 
     def get_id(self):
         return self.id
@@ -33,9 +32,11 @@ class Client:
         self.model.reset_weights()
 
     def local_fit(self):
-        for _ in range(self.nb_iter):
+        for i in range(self.nb_iter):
             gradients = self.compute_gradient()
             self.gradient_step(gradients)
+            if i % 250 == 0:
+                print(f"Iteration : {i}")
         pass
 
     def gradient_step(self, gradients):
@@ -58,7 +59,7 @@ class Client:
         to be another vector of the same size
         """
         
-        gradients = self.encrypt.encrypt_tensor(self.compute_gradient())
+        gradients = self.encrypt.encrypt_gradients(self.compute_gradient())
 
         if sum_to is not None:
             try:
@@ -67,7 +68,7 @@ class Client:
                 diff_size = len(sum_to) - len(gradients)
             if diff_size != 0:
                 raise Exception('Encrypted vectors must have the same size')
-            return self.encrypt.sum_encrypted_tensor(sum_to, gradients)
+            return self.encrypt.sum_encrypted_gradients(sum_to, gradients)
         else:
             return gradients
 

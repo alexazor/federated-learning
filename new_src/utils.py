@@ -4,6 +4,10 @@ from sklearn.datasets import load_diabetes
 
 def get_data(n_clients):
 
+    # Seed for reproductability
+    seed = 42
+    np.random.seed(seed)
+
     diabetes = load_diabetes()
     y = diabetes.target
     X = diabetes.data

@@ -55,11 +55,13 @@ class ModelLinearRegression(Model):
         return [delta.dot(self.data)]
 
     def update_model(self, gradients: list[NDArray]):
+        #print(self.weights)
+        #print(gradients[0])
         self.weights -= self.lr * gradients[0]
         pass
 
     def predict(self, data: NDArray) -> NDArray:
-        data = np.array(data)
+        #data = np.array(data)
         return data.dot(self.weights)
 
     def compute_loss(self, data: NDArray, label: NDArray) -> float:
@@ -93,9 +95,9 @@ class ModelMLP(Model):
         self.model.to(device=self.device)
 
         self.data, self.label = data, label
-        if data != None:
+        if type(data) != type(None):
             self.data = torch.tensor(data).to(device=self.device, dtype=torch.float32)
-        if label != None:
+        if type(label) != type(None):
             self.label = torch.tensor(label).to(device=self.device, dtype=torch.float32).unsqueeze(1)
 
     def __init_device(self):  # Use GPU or CPU

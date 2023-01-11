@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 import numpy as np
 import phe as paillier
 import tenseal as ts
@@ -7,7 +9,20 @@ from numpy._typing import NDArray
 # Paillier #
 ############
 
-class Paillier:
+class Cryptosystem(ABC):
+    @abstractmethod
+    def get_pubkey(self):
+        pass
+
+    @abstractmethod
+    def get_encryption(self):
+        pass
+
+    @abstractmethod
+    def get_decryption(self):
+        pass
+
+class Paillier(Cryptosystem):
     def __init__(self) -> None:
         pubkey, privkey = paillier.generate_paillier_keypair(n_length=1024)
         self.pubkey = pubkey
@@ -38,12 +53,15 @@ class PaillierEnc:
         return [self.encrypt_value(v) for v in vector]
 
     def encrypt_matrix(self, matrix: NDArray):
-        if matrix.ndim == 1:
+        if isinstance(matrix[0], (int, float)):
             return self.encrypt_vector(matrix)
         return [self.encrypt_vector(row) for row in matrix]
 
-    def encrypt_tensor(self, tensor):
-        return [self.encrypt_matrix(col) for col in tensor]
+    def encrypt_gradients(self, gradients):
+        enc_grads = []
+        for grad in gradients:
+            enc_grads.append(self.encrypt_matrix(grad))
+        return enc_grads
 
     def sum_encrypted_vectors(self, x, y):
         if len(x) != len(y):
@@ -54,6 +72,11 @@ class PaillierEnc:
         if not isinstance(x[0], list):
             return self.sum_encrypted_vectors(x, y)
         return [[x[i][j] + y[i][j] for j in range(len(x[0]))] for i in range(len(x))]
+
+    def sum_encrypted_gradients(self, x, y):
+        if len(x) != len(y):
+            raise Exception('Encrypted vectors must have the same size')
+        return [self.sum_encrypted_matrix(x[i], y[i]) for i in range(len(x))]
 
 class PaillierDec:
     def __init__(self, privKey) -> None:
@@ -70,18 +93,17 @@ class PaillierDec:
             return self.decrypt_vector(enc_matrix)
         return np.array([self.decrypt_vector(row) for row in enc_matrix])
 
-    def decrypt_tensor(self, enc_tensor):
-        if not isinstance(enc_tensor[0], list):
-            return self.decrypt_vector(enc_tensor)
-        if not isinstance(enc_tensor[1], list):
-            return self.decrypt_matrix(enc_tensor)
-        return np.array([self.decrypt_matrix(col) for col in enc_tensor])
+    def decrypt_gradients(self, enc_gradients):
+        gradients = []
+        for grad in enc_gradients:
+            gradients.append(self.decrypt_matrix(grad))
+        return gradients
 
 ########
 # CKKS #
 ########
 
-class CKKS:
+class CKKS(Cryptosystem):
     def __init__(self) -> None:
         self.context = ts.context(
             ts.SCHEME_TYPE.CKKS,
@@ -112,16 +134,22 @@ class CKKSEnc:
     def encrypt_vector(self, vector):
         return ts.ckks_vector(self.context, vector)
 
-    def encrypt_tensor(self, matrix: NDArray):
-        if matrix.ndim == 1:
+    def encrypt_gradients(self, gradients):
+        enc_grads = []
+        for grad in gradients:
+            enc_grads.append(ts.ckks_tensor(self.context, grad))
+        return enc_grads
+
+    def encrypt_tensor(self, matrix):
+        if isinstance(matrix[0], (int, float)):
             return self.encrypt_vector(matrix)
         return ts.ckks_tensor(self.context, matrix)
 
     def sum(self, x, y):
         return x + y
 
-    def sum_encrypted_tensor(self, x, y):
-        return self.sum(x, y)
+    def sum_encrypted_gradients(self, x, y):
+        return [x[i] + y[i] for i in range(len(x))]
 
 class CKKSDec:
     def __init__(self, context) -> None:
@@ -130,5 +158,8 @@ class CKKSDec:
     def decrypt(self, enc):
         return enc.decrypt()
 
-    def decrypt_tensor(self, enc_matrix):
-        return self.decrypt(enc_matrix)
+    def decrypt_gradients(self, enc_gradients):
+        gradients = []
+        for enc_grad in enc_gradients:
+            gradients.append(np.array(self.decrypt(enc_grad).tolist()))
+        return gradients
