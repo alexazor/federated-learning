@@ -3,6 +3,17 @@ from sklearn.datasets import load_diabetes
 
 
 def get_data(n_clients):
+    """Returns train and test dataset split for each client
+
+    Args:
+        n_clients (int): number of clients
+
+    Returns:
+        X (list[NDarray]): list of train data
+        y (list[NDarray]): list of train label
+        X_test (list[NDarray]): list of test data
+        y_test (list[NDarray]): list of test label
+    """
 
     # Seed for reproductability
     seed = 42
