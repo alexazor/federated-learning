@@ -17,6 +17,12 @@ class Cryptosystem(ABC):
         pass
 
     @abstractmethod
+    def get_privkey(self):
+        """Returns private key
+        """
+        pass
+
+    @abstractmethod
     def get_encryption(self):
         """Returns encryption class
         """
@@ -253,9 +259,14 @@ class CKKS(Cryptosystem):
           )
         self.context.generate_galois_keys()
         self.context.global_scale = 2**40
+        self.privkey = self.context.secret_key()
+        self.context.make_context_public()
 
     def get_pubkey(self):
         return self.context.public_key()
+
+    def get_privkey(self):
+        return self.privkey
 
     def get_context(self):
         return self.context
@@ -265,7 +276,7 @@ class CKKS(Cryptosystem):
         return enc
 
     def get_decryption(self):
-        dec = CKKSDec(self.context)
+        dec = CKKSDec(self.privkey)
         return dec
 
 class CKKSEnc(EncClass):
@@ -340,13 +351,13 @@ class CKKSEnc(EncClass):
         return [x[i] + y[i] for i in range(len(x))]
 
 class CKKSDec(DecClass):
-    def __init__(self, context) -> None:
+    def __init__(self, privkey) -> None:
         """Decrypting class for CKKS
 
         Args:
-            context (tenseal.Context): tenseal context for decrypting
+            privkey (tenseal.Secret_key): tenseal private key for decrypting
         """
-        self.context = context
+        self.privkey = privkey
 
     def decrypt(self, enc):
         """Decrypt vector or matrix or tensor
@@ -357,7 +368,7 @@ class CKKSDec(DecClass):
         Returns:
             (list, NDArray, tensor): Decrypted iterable
         """
-        return enc.decrypt()
+        return enc.decrypt(self.privkey)
 
     def decrypt_gradients(self, enc_gradients):
         """Decrypt model's gradients
